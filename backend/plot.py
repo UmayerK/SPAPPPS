@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
+from obspy import read
 
 # Set directories
 cat_directory = './data/lunar/training/catalogs/'
@@ -49,6 +50,45 @@ ax.set_xlim([min(csv_times), max(csv_times)])
 ax.set_ylabel('Velocity (m/s)')
 ax.set_xlabel('Time (s)')
 ax.set_title(f'{test_filename}', fontweight='bold')
+
+# Set the minimum frequency
+minfreq = 0.5
+maxfreq = 1.0
+# Going to create a separate trace for the filter data
+data_directory = './data/lunar/training/data/S12_GradeA/'
+mseed_file = f'{data_directory}{test_filename}.mseed'
+st = read(mseed_file)
+
+st_filt = st.copy()
+st_filt.filter('bandpass',freqmin=minfreq,freqmax=maxfreq)
+tr_filt = st_filt.traces[0].copy()
+tr_times_filt = tr_filt.times()
+tr_data_filt = tr_filt.data
+
+# To better see the patterns, we will create a spectrogram using the scipy␣
+# It requires the sampling rate, which we can get from the miniseed header as␣
+from scipy import signal
+from matplotlib import cm
+f, t, sxx = signal.spectrogram(tr_data_filt, tr_filt.stats.sampling_rate)
+
+# Plot the time series and spectrogram
+fig = plt.figure(figsize=(10, 10))
+ax = plt.subplot(2, 1, 1)
+# Plot trace
+ax.plot(tr_times_filt,tr_data_filt)
+# Mark detection
+ax.legend(loc='upper left')
+# Make the plot pretty
+ax.set_xlim([min(tr_times_filt),max(tr_times_filt)])
+ax.set_ylabel('Velocity (m/s)')
+ax.set_xlabel('Time (s)')
+ax2 = plt.subplot(2, 1, 2)
+vals = ax2.pcolormesh(t, f, sxx, cmap=cm.jet, vmax=5e-17)
+ax2.set_xlim([min(tr_times_filt),max(tr_times_filt)])
+ax2.set_xlabel(f'Time (Day Hour:Minute)', fontweight='bold')
+ax2.set_ylabel('Frequency (Hz)', fontweight='bold')
+cbar = plt.colorbar(vals, orientation='horizontal')
+cbar.set_label('Power ((m/s)^2/sqrt(Hz))', fontweight='bold')
 
 # Plot where the arrival time is
 arrival_line = ax.axvline(x=arrival_time_rel, c='red', label='Rel. Arrival')
