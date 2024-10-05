@@ -13,8 +13,19 @@ print("Contents of the catalog:")
 print(cat)
 print("\n")
 
+# Ask for user input
+while True:
+    try:
+        row_index = int(input("Enter the row number you want to select (0 to {}): ".format(len(cat) - 1)))
+        if 0 <= row_index < len(cat):
+            break
+        else:
+            print("Please enter a valid row number.")
+    except ValueError:
+        print("Please enter a valid integer.")
+
 # Select a detection
-row = cat.iloc[1]
+row = cat.iloc[row_index]
 
 # Get arrival time in absolute and relative formats
 arrival_time = datetime.strptime(row['time_abs(%Y-%m-%dT%H:%M:%S.%f)'], '%Y-%m-%dT%H:%M:%S.%f')
